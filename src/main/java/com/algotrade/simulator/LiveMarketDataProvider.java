@@ -86,7 +86,7 @@ public class LiveMarketDataProvider implements Runnable {
         client.dispatcher().executorService().shutdown();
     }
 
-    private static String extractJsonField(String json, String key) {
+    public static String extractJsonField(String json, String key) {
         String pattern = "\"" + key + "\":\"";
         int start = json.indexOf(pattern);
         if (start == -1) return null;
