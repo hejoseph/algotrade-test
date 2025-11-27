@@ -47,9 +47,9 @@ public class LiveMarketDataProvider implements Runnable {
                     String askQtyStr = extractJsonField(text, "A");
                     if (bidPriceStr != null && bidQtyStr != null && askPriceStr != null && askQtyStr != null) {
                         double bid = Double.parseDouble(bidPriceStr);
-                        long bidQty = Long.parseLong(bidQtyStr);
+                        long bidQty = Math.round(Double.parseDouble(bidQtyStr));
                         double ask = Double.parseDouble(askPriceStr);
-                        long askQty = Long.parseLong(askQtyStr);
+                        long askQty = Math.round(Double.parseDouble(askQtyStr));
                         MarketData data = new MarketData(symbol, bid, ask, bidQty, askQty);
                         pipeline.processMarketData(data);
                         System.out.println("Live: " + data);
