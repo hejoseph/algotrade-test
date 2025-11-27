@@ -40,6 +40,9 @@ public class App {
         // The throttler wraps the actual executor to control the rate of orders
         OrderExecutor orderExecutor = new ExecutionThrottler(delegateExecutor, 5, 1000); // 5 orders per 1 second
 
-        System.out.println("Risk management and execution components configured.");
+        // --- 4. Assemble the TradingPipeline ---
+        TradingPipeline pipeline = new TradingPipeline(meanReversionStrategy, riskManager, orderExecutor, exchange, tradeMetrics, latencyMetrics);
+
+        System.out.println("Trading pipeline assembled.");
     }
 }
