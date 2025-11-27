@@ -3,7 +3,6 @@ package com.algotrade;
 import com.algotrade.exchange.Exchange;
 import com.algotrade.metrics.LatencyMetrics;
 import com.algotrade.metrics.TradeMetrics;
-import com.algotrade.model.MarketData;
 import com.algotrade.pipeline.*;
 import com.algotrade.risk.MaxPositionRiskManager;
 import com.algotrade.risk.PositionManager;
@@ -15,17 +14,25 @@ import java.util.concurrent.Executors;
 
 /**
  * Entry point for real-time trading simulation using live Binance data.
- * Assembles pipeline and runs indefinitely until interrupted.
+ * Assembles pipeline and runs indefinitely until interrupted (Ctrl+C).
+ * Prints final metrics on shutdown.
  */
 public class RealTimeTrader {
-    public static void main(String[] args) throws InterruptedException {
+    private static TradingPipeline pipeline;
+    private static LiveMarketDataProvider liveProvider;
+    private static ExecutorService dataExecutor;
+    private static TradeMetrics tradeMetrics;
+    private static PositionManager positionManager;
+    private static String symbol;
+
+    public static void main(String[] args) {
         System.out.println("--- Initializing Real-Time Trading Simulation ---");
 
-        String symbol = "BTC/USD";  // Normalized to BTCUSDT for Binance
+        symbol = "BTCUSDT";  // Binance symbol
         Exchange exchange = new Exchange();
         exchange.addSymbol(symbol);
 
-        TradeMetrics tradeMetrics = new TradeMetrics();
+        tradeMetrics = new TradeMetrics();
         LatencyMetrics latencyMetrics = new LatencyMetrics();
 
         // Strategy
@@ -35,7 +42,7 @@ public class RealTimeTrader {
         MeanReversionStrategy strategy = new MeanReversionStrategy(symbol, lookbackPeriod, priceThreshold, orderQuantity);
 
         // Risk
-        PositionManager positionManager = new PositionManager();
+        positionManager = new PositionManager();
         MaxPositionRiskManager riskManager = new MaxPositionRiskManager(positionManager, symbol, 10L);
 
         // Execution
@@ -43,16 +50,33 @@ public class RealTimeTrader {
         OrderExecutor orderExecutor = new ExecutionThrottler(delegateExecutor, 5, 1000);  // 5/sec
 
         // Pipeline
-        TradingPipeline pipeline = new TradingPipeline(strategy, riskManager, orderExecutor, exchange, tradeMetrics, latencyMetrics);
+        pipeline = new TradingPipeline(strategy, riskManager, orderExecutor, exchange, tradeMetrics, latencyMetrics);
 
         // Live data provider
-        LiveMarketDataProvider liveProvider = new LiveMarketDataProvider(symbol, pipeline);
-        ExecutorService dataExecutor = Executors.newSingleThreadExecutor();
+        liveProvider = new LiveMarketDataProvider(symbol, pipeline);
+        dataExecutor = Executors.newSingleThreadExecutor();
         dataExecutor.submit(liveProvider);
 
-        System.out.println("Real-time simulation running. Press Ctrl+C to stop.");
+        System.out.println("Real-time simulation running for " + symbol + ". Press Ctrl+C to stop.");
 
-        // Block until interrupted (Ctrl+C)
-        Thread.sleep(Long.MAX_VALUE);
+        // Shutdown hook for graceful exit
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            System.out.println("Shutdown initiated...");
+            if (liveProvider != null) liveProvider.shutdown();
+            if (dataExecutor != null) dataExecutor.shutdownNow();
+            if (pipeline != null) pipeline.shutdown();
+            System.out.println("---- Final Metrics ----");
+            System.out.println("PnL for " + symbol + ": " + tradeMetrics.getPnl(symbol));
+            System.out.println("Fill Ratio for " + symbol + ": " + tradeMetrics.getFillRatio(symbol));
+            System.out.println("Final Position for " + symbol + ": " + positionManager.getPosition(symbol));
+        }));
+
+        // Block until interrupted
+        try {
+            Thread.sleep(Long.MAX_VALUE);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            // Shutdown hook will handle cleanup
+        }
     }
 }
