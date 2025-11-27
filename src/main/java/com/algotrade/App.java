@@ -20,12 +20,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class App {
     public static void main(String[] args) throws InterruptedException {
-        // --- 1. Set up the main simulation environment ---
         System.out.println("--- Initializing Simulation Environment ---");
         Exchange exchange = new Exchange();
         TradeMetrics tradeMetrics = new TradeMetrics();
         LatencyMetrics latencyMetrics = new LatencyMetrics();
 
-        System.out.println("Simulation setup will be completed in subsequent steps.");
+        String symbol = "TESTINGSYM";
+        int lookbackPeriod = 10;
+        double priceThreshold = 0.001;
+        long orderQuantity = 100;
+        MeanReversionStrategy meanReversionStrategy = new MeanReversionStrategy(symbol, lookbackPeriod, priceThreshold, orderQuantity);
+
+        System.out.println("MeanReversionStrategy configured.");
     }
 }
