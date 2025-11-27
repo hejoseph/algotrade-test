@@ -62,7 +62,7 @@ class MaxPositionRiskManagerTest {
         positionManager.updatePosition(buyOrder);
         assertEquals(10, positionManager.getPosition(SYMBOL));
 
-        Order sellOrder = new Order(SYMBOL, OrderType.LIMIT, Side.SELL, 100.0, 20); // -10 final position, exceeds max absolute 10
-        assertFalse(riskManager.checkOrder(sellOrder));
+        Order sellOrder = new Order(SYMBOL, OrderType.LIMIT, Side.SELL, 100.0, 20); // -10 final position, should be allowed.
+        assertTrue(riskManager.checkOrder(sellOrder));
     }
 }

@@ -32,16 +32,11 @@ public class ExecutionThrottler implements OrderExecutor {
 
     @Override
     public List<Trade> executeOrder(Order order) {
-        try {
-            if (semaphore.tryAcquire(rateLimitIntervalMillis, TimeUnit.MILLISECONDS)) {
-                return delegateExecutor.executeOrder(order);
-            } else {
-                System.out.println("Order throttled: " + order.getOrderId());
-                return List.of(); // Return empty list for throttled orders
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return List.of();
+        if (semaphore.tryAcquire()) {
+            return delegateExecutor.executeOrder(order);
+        } else {
+            System.out.println("Order throttled: " + order.getOrderId());
+            return List.of(); // Return empty list for throttled orders
         }
     }
 }

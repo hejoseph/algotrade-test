@@ -9,7 +9,7 @@ public class Order {
     private final OrderType orderType;
     private final Side side;
     private final double price;
-    private final long quantity;
+    private long quantity;
     private final LocalDateTime timestamp;
     private final long creationTimeMillis;
 
@@ -54,6 +54,13 @@ public class Order {
 
     public long getCreationTimeMillis() {
         return creationTimeMillis;
+    }
+
+    public void reduceQuantity(long amount) {
+        if (amount > this.quantity) {
+            throw new IllegalArgumentException("Cannot reduce quantity by more than the current quantity.");
+        }
+        this.quantity -= amount;
     }
 
     @Override

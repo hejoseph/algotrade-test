@@ -54,17 +54,15 @@ public class OrderBook {
                 long tradedQuantity = Math.min(newBuyOrder.getQuantity(), bestSellOrder.getQuantity());
                 double tradePrice = bestSellOrder.getPrice();
 
-                trades.add(new Trade(String.valueOf(tradeIdCounter.incrementAndGet()), symbol, tradePrice, tradedQuantity, Side.BUY));
+                trades.add(new Trade(newBuyOrder.getOrderId(), symbol, tradePrice, tradedQuantity, Side.BUY));
 
-                newBuyOrder = new Order(newBuyOrder.getSymbol(), newBuyOrder.getOrderType(), newBuyOrder.getSide(), newBuyOrder.getPrice(), newBuyOrder.getQuantity() - tradedQuantity);
-                bestSellOrder = new Order(bestSellOrder.getSymbol(), bestSellOrder.getOrderType(), bestSellOrder.getSide(), bestSellOrder.getPrice(), bestSellOrder.getQuantity() - tradedQuantity);
+                newBuyOrder.reduceQuantity(tradedQuantity);
+                bestSellOrder.reduceQuantity(tradedQuantity);
 
                 if (bestSellOrder.getQuantity() == 0) {
                     sellOrders.poll();
                     activeOrders.remove(bestSellOrder.getOrderId());
                 }
-                activeOrders.put(newBuyOrder.getOrderId(), newBuyOrder);
-                activeOrders.put(bestSellOrder.getOrderId(), bestSellOrder);
             } else {
                 break; // No match for limit buy order
             }
@@ -81,17 +79,15 @@ public class OrderBook {
                 long tradedQuantity = Math.min(newSellOrder.getQuantity(), bestBuyOrder.getQuantity());
                 double tradePrice = bestBuyOrder.getPrice();
 
-                trades.add(new Trade(String.valueOf(tradeIdCounter.incrementAndGet()), symbol, tradePrice, tradedQuantity, Side.SELL));
+                trades.add(new Trade(newSellOrder.getOrderId(), symbol, tradePrice, tradedQuantity, Side.SELL));
 
-                newSellOrder = new Order(newSellOrder.getSymbol(), newSellOrder.getOrderType(), newSellOrder.getSide(), newSellOrder.getPrice(), newSellOrder.getQuantity() - tradedQuantity);
-                bestBuyOrder = new Order(bestBuyOrder.getSymbol(), bestBuyOrder.getOrderType(), bestBuyOrder.getSide(), bestBuyOrder.getPrice(), bestBuyOrder.getQuantity() - tradedQuantity);
+                newSellOrder.reduceQuantity(tradedQuantity);
+                bestBuyOrder.reduceQuantity(tradedQuantity);
 
                 if (bestBuyOrder.getQuantity() == 0) {
                     buyOrders.poll();
                     activeOrders.remove(bestBuyOrder.getOrderId());
                 }
-                activeOrders.put(newSellOrder.getOrderId(), newSellOrder);
-                activeOrders.put(bestBuyOrder.getOrderId(), bestBuyOrder);
             } else {
                 break; // No match for limit sell order
             }
